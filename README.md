@@ -197,13 +197,28 @@ O arquivo `render.yaml` na raiz provisiona automaticamente:
 | `NODE_ENV` | `production` |
 | `FRONTEND_URL` | **Definir manualmente** no dashboard |
 
-### Frontend em produção
+### Frontend em produção (Vercel)
 
-O frontend não está no `render.yaml`. Faça deploy separado (ex.: Vercel) e configure:
+O frontend é deployado na [Vercel](https://vercel.com) (recomendado para Next.js).
 
-```env
-NEXT_PUBLIC_API_URL=https://lavland-api.onrender.com/api
-```
+#### Passo a passo
+
+1. Acesse [vercel.com/new](https://vercel.com/new) e importe o repositório `rodmartinsfernandes/lavland`.
+2. Em **Root Directory**, clique em *Edit* e selecione **`frontend`**.
+3. Em **Environment Variables**, adicione:
+
+   | Nome | Valor |
+   |------|-------|
+   | `NEXT_PUBLIC_API_URL` | `https://lavland-api.onrender.com/api` |
+
+4. Clique em **Deploy** e aguarde o build.
+5. Copie a URL gerada (ex.: `https://lavland.vercel.app`).
+6. No Render, abra **lavland-api → Environment** e atualize **`FRONTEND_URL`** com essa URL (sem barra no final). O serviço reinicia automaticamente.
+
+#### Validar
+
+- Acesse a URL do frontend e faça login com `admin@lavland.local` / `admin123`.
+- Se o login falhar com erro de CORS, confira se `FRONTEND_URL` no Render corresponde exatamente à URL do Vercel.
 
 ### Observações
 
