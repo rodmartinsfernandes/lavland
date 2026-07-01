@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f9fc;
+  --foreground: #18181b;
+  --surface: #ffffff;
+  --surface-muted: #f4f4f5;
+  --border: #e4e4e7;
+  --border-subtle: #f0f0f3;
+  --muted: #71717a;
+  --muted-foreground: #a1a1aa;
+  --brand: #c026d3;
+  --brand-hover: #a21caf;
+  --brand-soft: #fae8ff;
+  --brand-muted: #f5d0fe;
+  --accent: #06b6d4;
+  --accent-soft: #ecfeff;
+  --success: #10b981;
+  --success-soft: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-soft: #fffbeb;
+  --danger: #ef4444;
+  --danger-soft: #fef2f2;
+  --shadow-sm: 0 1px 2px rgb(24 24 27 / 0.04);
+  --shadow-md: 0 4px 24px rgb(192 38 211 / 0.07), 0 1px 3px rgb(24 24 27 / 0.04);
+  --shadow-lg: 0 12px 40px rgb(192 38 211 / 0.1), 0 4px 12px rgb(24 24 27 / 0.05);
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell-bg {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 0% -10%, rgb(192 38 211 / 0.09), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(6 182 212 / 0.08), transparent),
+    radial-gradient(ellipse 50% 30% at 50% 100%, rgb(192 38 211 / 0.04), transparent);
+}
+
+.glass-panel {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgb(255 255 255 / 0.8);
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #c026d3 0%, #a21caf 50%, #7c3aed 100%);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(135deg, #c026d3, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 0.25s ease-out forwards;
+}
+
+.toast-exit {
+  animation: toast-exit 0.2s ease-in forwards;
+}

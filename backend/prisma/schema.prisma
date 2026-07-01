@@ -1,0 +1,243 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  PIX
+  OTHER
+}
+
+enum RevenueSource {
+  DAILY_SALES
+  MAXPAN
+  CASH
+  CARD
+  PIX
+  OTHER
+}
+
+enum ExpenseType {
+  FIXED
+  VARIABLE
+}
+
+enum PayableStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum MachineType {
+  WASHER
+  DRYER
+}
+
+enum MachineStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum CardType {
+  DEBIT
+  CREDIT
+}
+
+enum InventoryMovementType {
+  IN
+  OUT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(OPERATOR)
+  active    Boolean  @default(true)
+  laundryId String?
+  laundry   Laundry? @relation(fields: [laundryId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Laundry {
+  id                 String             @id @default(uuid())
+  name               String
+  address            String?
+  cnpj               String?
+  settings           Json?
+  feeConfig          LaundryFeeConfig?
+  users              User[]
+  revenues           Revenue[]
+  expenses           Expense[]
+  payables           Payable[]
+  machines           Machine[]
+  inventoryProducts  InventoryProduct[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@map("laundries")
+}
+
+model LaundryFeeConfig {
+  id                     String   @id @default(uuid())
+  laundryId              String   @unique
+  laundry                Laundry  @relation(fields: [laundryId], references: [id], onDelete: Cascade)
+  debitRate              Decimal  @default(1.45) @db.Decimal(5, 2)
+  credit1xRate           Decimal  @default(2.10) @db.Decimal(5, 2)
+  creditInstallmentsRate Decimal  @default(2.34) @db.Decimal(5, 2)
+  pixRate                Decimal  @default(0) @db.Decimal(5, 2)
+  cashRate               Decimal  @default(0) @db.Decimal(5, 2)
+  anticipationRate       Decimal  @default(1.29) @db.Decimal(5, 2)
+  applyAnticipation      Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("laundry_fee_configs")
+}
+
+model ExpenseCategory {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  active    Boolean   @default(true)
+  expenses  Expense[]
+  payables  Payable[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("expense_categories")
+}
+
+model Revenue {
+  id            String        @id @default(uuid())
+  date          DateTime
+  amount        Decimal       @db.Decimal(12, 2)
+  netAmount     Decimal?      @db.Decimal(12, 2)
+  feeRate       Decimal?      @db.Decimal(5, 2)
+  feeAmount     Decimal?      @db.Decimal(12, 2)
+  paymentMethod PaymentMethod
+  cardType      CardType?
+  installments  Int?
+  source        RevenueSource
+  category      String?
+  note          String?
+  laundryId     String
+  laundry       Laundry       @relation(fields: [laundryId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([laundryId, date])
+  @@map("revenues")
+}
+
+model Expense {
+  id            String          @id @default(uuid())
+  date          DateTime
+  description   String
+  amount        Decimal         @db.Decimal(12, 2)
+  type          ExpenseType
+  paid          Boolean         @default(false)
+  paymentMethod PaymentMethod?
+  note          String?
+  categoryId    String
+  category      ExpenseCategory @relation(fields: [categoryId], references: [id])
+  laundryId     String
+  laundry       Laundry         @relation(fields: [laundryId], references: [id])
+  machineId     String?
+  machine       Machine?        @relation(fields: [machineId], references: [id])
+  payable       Payable?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([laundryId, date])
+  @@index([machineId])
+  @@map("expenses")
+}
+
+model Payable {
+  id          String           @id @default(uuid())
+  description String
+  amount      Decimal          @db.Decimal(12, 2)
+  dueDate     DateTime
+  status      PayableStatus    @default(PENDING)
+  paidAt      DateTime?
+  note        String?
+  categoryId  String?
+  category    ExpenseCategory? @relation(fields: [categoryId], references: [id])
+  expenseId   String?          @unique
+  expense     Expense?         @relation(fields: [expenseId], references: [id])
+  laundryId   String
+  laundry     Laundry          @relation(fields: [laundryId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([laundryId, dueDate])
+  @@index([status])
+  @@map("payables")
+}
+
+model Machine {
+  id         String        @id @default(uuid())
+  name       String
+  type       MachineType
+  capacity   String?
+  brandModel String?
+  acquiredAt DateTime?
+  status     MachineStatus @default(ACTIVE)
+  laundryId  String
+  laundry    Laundry       @relation(fields: [laundryId], references: [id])
+  expenses   Expense[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([laundryId])
+  @@map("machines")
+}
+
+model InventoryProduct {
+  id           String              @id @default(uuid())
+  name         String
+  unit         String
+  unitCost     Decimal             @db.Decimal(12, 2)
+  currentStock Decimal             @default(0) @db.Decimal(12, 3)
+  minStock     Decimal             @default(0) @db.Decimal(12, 3)
+  laundryId    String
+  laundry      Laundry             @relation(fields: [laundryId], references: [id])
+  movements    InventoryMovement[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([laundryId])
+  @@map("inventory_products")
+}
+
+model InventoryMovement {
+  id        String                @id @default(uuid())
+  type      InventoryMovementType
+  quantity  Decimal               @db.Decimal(12, 3)
+  unitCost  Decimal?              @db.Decimal(12, 2)
+  note      String?
+  productId String
+  product   InventoryProduct      @relation(fields: [productId], references: [id])
+  createdAt DateTime              @default(now())
+
+  @@index([productId, createdAt])
+  @@map("inventory_movements")
+}
