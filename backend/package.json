@@ -5,6 +5,9 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "prisma generate && nest build",
     "start:prod": "node dist/src/main.js",
@@ -21,7 +24,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "render:build": "npm run build && prisma migrate deploy && prisma db seed"
+    "render:build": "npm run build && prisma migrate deploy && npm run prisma:seed"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -44,6 +47,7 @@
     "pg": "^8.22.0",
     "prisma": "^7.8.0",
     "reflect-metadata": "^0.2.2",
+    "ts-node": "^10.9.2",
     "rxjs": "^7.8.1",
     "xlsx": "^0.18.5"
   },
@@ -71,7 +75,6 @@
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
-    "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"

@@ -8,7 +8,7 @@ Sistema web de gestão financeira e operacional para lavanderia express. Complem
 |--------|-------------|
 | Backend | NestJS, TypeScript, PostgreSQL, Prisma 7, JWT |
 | Frontend | Next.js 16, TypeScript, Tailwind CSS |
-| Infra | Docker Compose (PostgreSQL + API + frontend) |
+| Infra | Docker Compose (PostgreSQL + API + frontend), Render (API + PostgreSQL) |
 
 ## Estrutura do projeto
 
@@ -166,6 +166,50 @@ npm run docker:logs        # Logs dos containers
 ## Prisma 7
 
 O projeto usa Prisma 7 com configuração em `backend/prisma.config.ts` (não no `schema.prisma`). O client é gerado em `backend/src/generated/prisma` com `moduleFormat = "cjs"`.
+
+## Deploy do backend (Render)
+
+O arquivo `render.yaml` na raiz provisiona automaticamente:
+
+- **lavland-db** — PostgreSQL (plano free)
+- **lavland-api** — Web Service Node.js com a API NestJS
+
+### Passo a passo
+
+1. Acesse [render.com](https://render.com) e conecte o repositório GitHub `lavland`.
+2. Crie um **Blueprint** apontando para o branch `main`. O Render detecta o `render.yaml` e cria os dois recursos.
+3. No serviço **lavland-api**, defina manualmente a variável **`FRONTEND_URL`** com a URL de produção do frontend (ex.: `https://seu-app.vercel.app`). Sem isso, o CORS bloqueia requisições do browser.
+4. Aguarde o primeiro deploy. O build executa:
+   - `prisma generate` + `nest build`
+   - `prisma migrate deploy`
+   - seed (categorias, lavanderia padrão e usuário admin)
+5. Valide a API:
+   - `GET https://lavland-api.onrender.com/api/health` → `{ "status": "ok", "database": "connected" }`
+   - `POST https://lavland-api.onrender.com/api/auth/login` com as credenciais do seed
+
+### Variáveis no Render
+
+| Variável | Origem |
+|----------|--------|
+| `DATABASE_URL` | Vinculada automaticamente ao `lavland-db` |
+| `JWT_SECRET` | Gerado automaticamente pelo Render |
+| `JWT_EXPIRES_IN` | `7d` (definido no blueprint) |
+| `NODE_ENV` | `production` |
+| `FRONTEND_URL` | **Definir manualmente** no dashboard |
+
+### Frontend em produção
+
+O frontend não está no `render.yaml`. Faça deploy separado (ex.: Vercel) e configure:
+
+```env
+NEXT_PUBLIC_API_URL=https://lavland-api.onrender.com/api
+```
+
+### Observações
+
+- O plano free do Render coloca o serviço em sleep após inatividade (cold start de ~30s na primeira requisição).
+- Troque a senha do usuário admin (`admin@lavland.local`) após o primeiro acesso em produção.
+- Novos pushes no `main` disparam redeploy automático (`autoDeploy: true`).
 
 ## Integração MaxPan
 
