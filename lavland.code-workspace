@@ -1,0 +1,16 @@
+{
+  "folders": [
+    {
+      "name": "lavland",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "git.openRepositoryInParentFolders": "always",
+    "git.autoRepositoryDetection": true,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.next": true
+    }
+  }
+}
