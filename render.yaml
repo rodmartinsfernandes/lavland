@@ -1,0 +1,28 @@
+databases:
+  - name: lavland-db
+    databaseName: lavland
+    user: lavland
+    plan: free
+
+services:
+  - type: web
+    name: lavland-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run render:build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lavland-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false
