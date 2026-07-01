@@ -195,7 +195,7 @@ O arquivo `render.yaml` na raiz provisiona automaticamente:
 | `JWT_SECRET` | Gerado automaticamente pelo Render |
 | `JWT_EXPIRES_IN` | `7d` (definido no blueprint) |
 | `NODE_ENV` | `production` |
-| `FRONTEND_URL` | **Definir manualmente** no dashboard |
+| `FRONTEND_URL` | **Definir manualmente** no dashboard (URL exata do Vercel, sem `/` no final). Aceita várias origens separadas por vírgula. |
 
 ### Frontend em produção (Vercel)
 
