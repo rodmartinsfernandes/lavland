@@ -21,7 +21,34 @@ const navItems = [
   { href: '/usuarios', label: 'Usuários', icon: 'usuarios', adminOnly: true },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+  onClose?: () => void;
+  showCloseButton?: boolean;
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+export function Sidebar({
+  onNavigate,
+  onClose,
+  showCloseButton = false,
+}: SidebarProps) {
   const pathname = usePathname();
   const { user, logout, isAdmin } = useAuth();
 
@@ -39,28 +66,41 @@ export function Sidebar() {
     .toUpperCase();
 
   return (
-    <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)]">
-      <div className="px-5 py-6">
-        <LavlandLogo
-          variant="mark"
-          href={isAdmin ? '/dashboard' : '/operador'}
-          size="md"
-          priority
-        />
-        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-          Gestão Financeira
-        </p>
+    <aside className="flex h-full max-h-screen w-[260px] shrink-0 flex-col overflow-hidden border-r border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] lg:h-full lg:shadow-none">
+      <div className="flex items-start justify-between gap-2 px-5 py-6">
+        <div className="min-w-0">
+          <LavlandLogo
+            variant="mark"
+            href={isAdmin ? '/dashboard' : '/operador'}
+            size="md"
+            priority
+          />
+          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+            Gestão Financeira
+          </p>
+        </div>
+        {showCloseButton && onClose ? (
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] lg:hidden"
+          >
+            <CloseIcon />
+          </button>
+        ) : null}
       </div>
 
       <StoreSwitcher />
 
-      <nav className="flex-1 space-y-0.5 px-3">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3">
         {items.map((item) => {
           const active = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 active
                   ? 'bg-gradient-to-r from-[var(--brand-soft)] to-[var(--accent-soft)] text-[var(--brand)] shadow-[var(--shadow-sm)]'
