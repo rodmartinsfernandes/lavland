@@ -8,6 +8,7 @@ export interface ParsedRevenueRow {
   rowNumber: number;
   date: string;
   amount: number;
+  netAmount?: number;
   paymentMethod: PaymentMethod;
   cardType?: CardType;
   installments?: number;

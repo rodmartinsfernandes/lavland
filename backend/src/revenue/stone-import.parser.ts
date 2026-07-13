@@ -31,17 +31,30 @@ const STONE_AMOUNT_HEADERS = [
   'amount',
 ];
 
-const STONE_STATUS_HEADERS = ['situacao', 'status', 'status_da_venda'];
+const STONE_STATUS_HEADERS = [
+  'situacao',
+  'status',
+  'status_da_venda',
+  'ultimo_status',
+];
 const STONE_PAYMENT_HEADERS = [
   'forma_de_pagamento',
   'meio_de_pagamento',
   'modalidade',
   'pagamento',
+  'produto',
+];
+const STONE_NET_AMOUNT_HEADERS = [
+  'valor_liquido',
+  'valor_liq',
+  'valor_liquido_da_venda',
+  'net_amount',
 ];
 const STONE_INSTALLMENT_HEADERS = [
   'parcelas',
   'numero_de_parcelas',
   'qtd_parcelas',
+  'n_de_parcelas',
   'installments',
 ];
 const STONE_ID_HEADERS = [
@@ -67,12 +80,15 @@ export function isStoneSalesFormat(headerMap: Map<string, number>) {
   const markers = [
     'stonecode',
     'situacao',
+    'ultimo_status',
     'bandeira',
+    'produto',
     'modalidade',
     'valor_bruto',
     'data_da_venda',
     'forma_de_pagamento',
     'meio_de_pagamento',
+    'stone_id',
     'id_da_transacao',
   ];
 
@@ -184,6 +200,7 @@ export function parseStoneSalesFile(
 
   const dateIndex = findColumn(headerMap, STONE_DATE_HEADERS);
   const amountIndex = findColumn(headerMap, STONE_AMOUNT_HEADERS);
+  const netAmountIndex = findColumn(headerMap, STONE_NET_AMOUNT_HEADERS);
   const statusIndex = findColumn(headerMap, STONE_STATUS_HEADERS);
   const paymentIndex = findColumn(headerMap, STONE_PAYMENT_HEADERS);
   const installmentsIndex = findColumn(headerMap, STONE_INSTALLMENT_HEADERS);
@@ -233,10 +250,13 @@ export function parseStoneSalesFile(
 
     const paymentValue = getCell(row, paymentIndex);
     const modalityIndex = headerMap.get('modalidade');
+    const produtoIndex = headerMap.get('produto');
     const modalityValue =
       modalityIndex !== undefined && modalityIndex !== paymentIndex
         ? getCell(row, modalityIndex)
-        : null;
+        : produtoIndex !== undefined && produtoIndex !== paymentIndex
+          ? getCell(row, produtoIndex)
+          : null;
 
     const payment = parseStonePayment(
       paymentValue,
@@ -254,6 +274,11 @@ export function parseStoneSalesFile(
 
     const transactionId = String(getCell(row, transactionIdIndex) ?? '').trim();
     const brand = String(getCell(row, brandIndex) ?? '').trim();
+    const netAmountRaw = parseAmount(getCell(row, netAmountIndex));
+    const netAmount =
+      netAmountRaw && netAmountRaw > 0 && netAmountRaw <= amount
+        ? netAmountRaw
+        : undefined;
     const noteParts = ['Importado Stone'];
     if (transactionId) noteParts.push(`ID ${transactionId}`);
     if (brand) noteParts.push(brand);
@@ -263,6 +288,7 @@ export function parseStoneSalesFile(
       rowNumber,
       date,
       amount,
+      netAmount,
       paymentMethod: payment.paymentMethod,
       cardType: payment.cardType,
       installments: payment.installments,

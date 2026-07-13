@@ -79,6 +79,14 @@ export function parseExcelDate(value: unknown): string | null {
       return `${brDateTime[3]}-${brDateTime[2].padStart(2, '0')}-${brDateTime[1].padStart(2, '0')}`;
     }
 
+    const brShortDate = trimmed.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{2})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/,
+    );
+    if (brShortDate) {
+      const year = 2000 + Number(brShortDate[3]);
+      return `${year}-${brShortDate[2].padStart(2, '0')}-${brShortDate[1].padStart(2, '0')}`;
+    }
+
     if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
       return trimmed.slice(0, 10);
     }

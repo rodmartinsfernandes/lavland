@@ -256,6 +256,7 @@ export class RevenueService {
     fees: CardFeeSettings,
     dto: {
       amount: number;
+      netAmount?: number;
       paymentMethod: PaymentMethod;
       cardType?: CardType | null;
       installments?: number | null;
@@ -273,17 +274,21 @@ export class RevenueService {
       dto.installments ?? 1,
     );
 
+    const netAmount =
+      dto.netAmount !== undefined
+        ? dto.netAmount
+        : computed.netAmount;
+    const feeAmount = Number((dto.amount - netAmount).toFixed(2));
+    const feeRate =
+      dto.amount > 0
+        ? Number(((feeAmount / dto.amount) * 100).toFixed(2))
+        : 0;
+
     return {
       amount: new Prisma.Decimal(dto.amount),
-      netAmount: new Prisma.Decimal(computed.netAmount),
-      feeRate:
-        computed.feeRate > 0
-          ? new Prisma.Decimal(computed.feeRate)
-          : null,
-      feeAmount:
-        computed.feeAmount > 0
-          ? new Prisma.Decimal(computed.feeAmount)
-          : null,
+      netAmount: new Prisma.Decimal(netAmount),
+      feeRate: feeRate > 0 ? new Prisma.Decimal(feeRate) : null,
+      feeAmount: feeAmount > 0 ? new Prisma.Decimal(feeAmount) : null,
       paymentMethod: dto.paymentMethod,
       cardType: computed.cardType,
       installments: computed.installments,
