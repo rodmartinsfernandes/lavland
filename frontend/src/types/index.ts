@@ -60,25 +60,5 @@ export interface DashboardSummary {
       category: string;
       amount: number;
     }[];
-    monthRevenueProjection: {
-      daysElapsed: number;
-      daysInMonth: number;
-      daysRemaining: number;
-      currentGross: number;
-      currentNet: number;
-      dailyAverageGross: number;
-      dailyAverageNet: number;
-      projectedGross: number;
-      projectedNet: number;
-      previousMonthNet: number;
-      paceVsPreviousMonth: number;
-      series: {
-        day: number;
-        actualGross: number | null;
-        actualNet: number | null;
-        projectedGross: number;
-        projectedNet: number;
-      }[];
-    };
   };
 }

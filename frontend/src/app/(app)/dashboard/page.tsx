@@ -197,13 +197,13 @@ export default function DashboardPage() {
 
       <Card>
         <h2 className="text-base font-semibold text-[var(--foreground)]">
-          Projeção de faturamento do mês
+          Projeção de faturamento
         </h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Estima o fechamento do mês com base no ritmo de receita até hoje.
+          Escolha o intervalo para simular quanto deve faturar no ritmo atual.
         </p>
         <div className="mt-5">
-          <RevenueProjectionChart data={data.charts.monthRevenueProjection} />
+          <RevenueProjectionChart />
         </div>
       </Card>
 
