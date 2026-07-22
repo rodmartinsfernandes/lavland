@@ -38,6 +38,7 @@ export class DashboardService {
       overduePayables,
       revenueVsExpenses,
       expensesByCategory,
+      monthlyRevenueTrend,
     ] = await Promise.all([
       this.sumRevenues(current.start, current.end, laundryFilter),
       this.sumNetRevenues(current.start, current.end, laundryFilter),
@@ -55,6 +56,7 @@ export class DashboardService {
       }),
       this.getRevenueVsExpensesChart(laundryFilter),
       this.getExpensesByCategoryChart(current.start, current.end, laundryFilter),
+      this.getMonthlyRevenueTrend(laundryFilter, 12),
     ]);
 
     const expensesPaid = currentExpenses;
@@ -105,6 +107,7 @@ export class DashboardService {
       charts: {
         revenueVsExpenses,
         expensesByCategory,
+        monthlyRevenueTrend,
       },
     };
   }
@@ -199,16 +202,22 @@ export class DashboardService {
     };
   }
 
-  private async getRevenueVsExpensesChart(laundryFilter: {
-    laundryId?: string;
-  }) {
+  private buildMonthWindows(count: number) {
     const now = new Date();
     const months: { label: string; start: Date; end: Date }[] = [];
 
-    for (let i = 5; i >= 0; i -= 1) {
+    for (let i = count - 1; i >= 0; i -= 1) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const start = new Date(date.getFullYear(), date.getMonth(), 1);
-      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+      const end = new Date(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       months.push({
         label: `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`,
         start,
@@ -216,15 +225,43 @@ export class DashboardService {
       });
     }
 
-    const data = await Promise.all(
+    return months;
+  }
+
+  private async getRevenueVsExpensesChart(laundryFilter: {
+    laundryId?: string;
+  }) {
+    const months = this.buildMonthWindows(6);
+
+    return Promise.all(
       months.map(async (month) => ({
         label: month.label,
         revenue: await this.sumRevenues(month.start, month.end, laundryFilter),
         expenses: await this.sumExpenses(month.start, month.end, laundryFilter),
       })),
     );
+  }
 
-    return data;
+  private async getMonthlyRevenueTrend(
+    laundryFilter: { laundryId?: string },
+    monthsCount = 12,
+  ) {
+    const months = this.buildMonthWindows(monthsCount);
+
+    return Promise.all(
+      months.map(async (month) => {
+        const [revenue, netRevenue] = await Promise.all([
+          this.sumRevenues(month.start, month.end, laundryFilter),
+          this.sumNetRevenues(month.start, month.end, laundryFilter),
+        ]);
+
+        return {
+          label: month.label,
+          revenue,
+          netRevenue,
+        };
+      }),
+    );
   }
 
   private async getExpensesByCategoryChart(

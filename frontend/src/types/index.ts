@@ -60,5 +60,10 @@ export interface DashboardSummary {
       category: string;
       amount: number;
     }[];
+    monthlyRevenueTrend: {
+      label: string;
+      revenue: number;
+      netRevenue: number;
+    }[];
   };
 }
