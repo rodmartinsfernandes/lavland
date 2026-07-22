@@ -38,7 +38,7 @@ export class DashboardService {
       overduePayables,
       revenueVsExpenses,
       expensesByCategory,
-      monthlyRevenueTrend,
+      monthRevenueProjection,
     ] = await Promise.all([
       this.sumRevenues(current.start, current.end, laundryFilter),
       this.sumNetRevenues(current.start, current.end, laundryFilter),
@@ -56,7 +56,7 @@ export class DashboardService {
       }),
       this.getRevenueVsExpensesChart(laundryFilter),
       this.getExpensesByCategoryChart(current.start, current.end, laundryFilter),
-      this.getMonthlyRevenueTrend(laundryFilter, 12),
+      this.getMonthRevenueProjection(current.start, laundryFilter),
     ]);
 
     const expensesPaid = currentExpenses;
@@ -107,7 +107,7 @@ export class DashboardService {
       charts: {
         revenueVsExpenses,
         expensesByCategory,
-        monthlyRevenueTrend,
+        monthRevenueProjection,
       },
     };
   }
@@ -242,26 +242,105 @@ export class DashboardService {
     );
   }
 
-  private async getMonthlyRevenueTrend(
+  private async getMonthRevenueProjection(
+    monthStart: Date,
     laundryFilter: { laundryId?: string },
-    monthsCount = 12,
   ) {
-    const months = this.buildMonthWindows(monthsCount);
-
-    return Promise.all(
-      months.map(async (month) => {
-        const [revenue, netRevenue] = await Promise.all([
-          this.sumRevenues(month.start, month.end, laundryFilter),
-          this.sumNetRevenues(month.start, month.end, laundryFilter),
-        ]);
-
-        return {
-          label: month.label,
-          revenue,
-          netRevenue,
-        };
-      }),
+    const year = monthStart.getFullYear();
+    const month = monthStart.getMonth();
+    const now = new Date();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysElapsed = Math.min(
+      Math.max(now.getDate(), 1),
+      daysInMonth,
     );
+    const daysRemaining = Math.max(daysInMonth - daysElapsed, 0);
+
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    const previousStart = new Date(year, month - 1, 1);
+    const previousEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const revenues = await this.prisma.revenue.findMany({
+      where: {
+        date: { gte: monthStart, lte: monthEnd },
+        ...laundryFilter,
+      },
+      select: { date: true, amount: true, netAmount: true },
+      orderBy: { date: 'asc' },
+    });
+
+    const dailyGross = new Map<number, number>();
+    const dailyNet = new Map<number, number>();
+
+    for (const item of revenues) {
+      const day = Number(item.date.toISOString().slice(8, 10));
+      const gross = toNumber(item.amount);
+      const net = toNumber(item.netAmount ?? item.amount);
+      dailyGross.set(day, (dailyGross.get(day) ?? 0) + gross);
+      dailyNet.set(day, (dailyNet.get(day) ?? 0) + net);
+    }
+
+    let runningGross = 0;
+    let runningNet = 0;
+    const series: {
+      day: number;
+      actualGross: number | null;
+      actualNet: number | null;
+      projectedGross: number;
+      projectedNet: number;
+    }[] = [];
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      runningGross += dailyGross.get(day) ?? 0;
+      runningNet += dailyNet.get(day) ?? 0;
+
+      series.push({
+        day,
+        actualGross:
+          day <= daysElapsed ? Number(runningGross.toFixed(2)) : null,
+        actualNet: day <= daysElapsed ? Number(runningNet.toFixed(2)) : null,
+        projectedGross: 0,
+        projectedNet: 0,
+      });
+    }
+
+    const currentPoint = series[daysElapsed - 1];
+    const currentGross = currentPoint?.actualGross ?? 0;
+    const currentNet = currentPoint?.actualNet ?? 0;
+    const dailyAverageGross = Number((currentGross / daysElapsed).toFixed(2));
+    const dailyAverageNet = Number((currentNet / daysElapsed).toFixed(2));
+    const projectedGross = Number(
+      (dailyAverageGross * daysInMonth).toFixed(2),
+    );
+    const projectedNet = Number((dailyAverageNet * daysInMonth).toFixed(2));
+
+    for (const point of series) {
+      point.projectedGross = Number(
+        (dailyAverageGross * point.day).toFixed(2),
+      );
+      point.projectedNet = Number((dailyAverageNet * point.day).toFixed(2));
+    }
+
+    const previousMonthNet = await this.sumNetRevenues(
+      previousStart,
+      previousEnd,
+      laundryFilter,
+    );
+
+    return {
+      daysElapsed,
+      daysInMonth,
+      daysRemaining,
+      currentGross,
+      currentNet,
+      dailyAverageGross,
+      dailyAverageNet,
+      projectedGross,
+      projectedNet,
+      previousMonthNet,
+      paceVsPreviousMonth: this.percentChange(previousMonthNet, projectedNet),
+      series,
+    };
   }
 
   private async getExpensesByCategoryChart(

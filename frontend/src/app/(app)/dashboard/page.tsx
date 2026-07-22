@@ -15,7 +15,7 @@ import { formatCurrency, formatMonth, formatPercent } from '@/lib/format';
 import { formatDate } from '@/lib/date';
 import type { DashboardSummary } from '@/types';
 import type { InventoryProduct, PaginatedResponse, Payable } from '@/types/entities';
-import { RevenueTrendChart } from '@/components/charts/revenue-trend-chart';
+import { RevenueProjectionChart } from '@/components/charts/revenue-projection-chart';
 
 const quickLinks = [
   { href: '/receitas', label: 'Nova receita' },
@@ -320,10 +320,13 @@ export default function DashboardPage() {
 
       <Card>
         <h2 className="text-base font-semibold text-[var(--foreground)]">
-          Tendência de faturamento mensal
+          Projeção de faturamento do mês
         </h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Estima o fechamento do mês com base no ritmo de receita até hoje.
+        </p>
         <div className="mt-5">
-          <RevenueTrendChart data={data.charts.monthlyRevenueTrend} />
+          <RevenueProjectionChart data={data.charts.monthRevenueProjection} />
         </div>
       </Card>
 
