@@ -11,9 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { LaundryFilter } from '@/components/ui/laundry-filter';
 import { formatCurrency, formatMonth, formatPercent } from '@/lib/format';
-import { formatDate } from '@/lib/date';
 import type { DashboardSummary } from '@/types';
-import type { PaginatedResponse, Payable } from '@/types/entities';
 import { RevenueProjectionChart } from '@/components/charts/revenue-projection-chart';
 
 const quickLinks = [
@@ -27,7 +25,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const { laundryId } = useLaundry();
   const [data, setData] = useState<DashboardSummary | null>(null);
-  const [upcomingPayables, setUpcomingPayables] = useState<Payable[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -41,20 +38,11 @@ export default function DashboardPage() {
     if (!isAdmin) return;
 
     const params = laundryId ? `?laundryId=${laundryId}` : '';
-    const payablesParams = new URLSearchParams({ limit: '5', status: 'PENDING' });
-    if (laundryId) payablesParams.set('laundryId', laundryId);
 
     setLoading(true);
-    Promise.all([
-      api<DashboardSummary>(`/dashboard/summary${params}`),
-      api<PaginatedResponse<Payable>>(`/payables?${payablesParams}`).catch(() => ({
-        data: [],
-        meta: { total: 0, page: 1, limit: 5, totalPages: 0 },
-      })),
-    ])
-      .then(([summary, payables]) => {
+    api<DashboardSummary>(`/dashboard/summary${params}`)
+      .then((summary) => {
         setData(summary);
-        setUpcomingPayables(payables.data);
         setError('');
       })
       .catch((err) => {
@@ -205,63 +193,6 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-      </Card>
-
-      <Card>
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[var(--foreground)]">
-            Contas a pagar
-          </h2>
-          <Link
-            href="/contas"
-            className="text-xs font-semibold text-[var(--brand)] hover:underline"
-          >
-            Ver todas
-          </Link>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-4">
-          <div className="rounded-2xl bg-[var(--warning-soft)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-              Pendentes
-            </p>
-            <p className="mt-2 text-2xl font-bold text-amber-600">
-              {data.payables.pending}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-[var(--danger-soft)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-red-700">
-              Vencidas
-            </p>
-            <p className="mt-2 text-2xl font-bold text-red-600">
-              {data.payables.overdue}
-            </p>
-          </div>
-        </div>
-        {upcomingPayables.length > 0 ? (
-          <div className="mt-5 space-y-3 border-t border-[var(--border-subtle)] pt-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-              Próximos vencimentos
-            </p>
-            {upcomingPayables.map((payable) => (
-              <div
-                key={payable.id}
-                className="flex items-center justify-between rounded-xl bg-[var(--surface-muted)] px-3 py-2.5 text-sm"
-              >
-                <span className="truncate font-medium text-[var(--foreground)]">
-                  {payable.description}
-                </span>
-                <div className="ml-3 shrink-0 text-right">
-                  <p className="font-semibold text-[var(--foreground)]">
-                    {formatCurrency(Number(payable.amount))}
-                  </p>
-                  <p className="text-xs text-[var(--muted)]">
-                    {formatDate(payable.dueDate)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
       </Card>
 
       <Card>
